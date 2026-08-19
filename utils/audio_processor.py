@@ -19,14 +19,24 @@ def download_youtube_audio(url:str)->str:
             }
         ],
         "quiet":True,
+        "nocheckcertificate": True,
+        "noplaylist": True,
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "ios", "mweb", "web"]
+            }
+        }
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info=ydl.extract_info(url,download=True)
-        filename=ydl.prepare_filename(info).replace(".webm",".wav").replace(".m4a",".wav")
+        base_filename=ydl.prepare_filename(info)
+        filename=os.path.splitext(base_filename)[0]+".wav"
     return filename
 
 
-data=download_youtube_audio("https://www.youtube.com/watch?v=ggNHDf18R1E")
 
 # capture the audio but this time convert to mono-audio and also the frequency to 16khz which is ideal for whisper AI
 
@@ -36,9 +46,7 @@ def convert_to_wav(input_path:str)->str:
     audio=AudioSegment.from_file(input_path) # Check the type of audio automatically whether its mp4 or mp3 or any other
     audio=audio.set_channels(1).set_frame_rate(16000) #Convert to mono audio and set frame-rate to 16kHz
     audio.export(output_path,format="wav")
-    return output_path
-
-data_wav=(convert_to_wav(data))
+    return output_path  
 
 # Create Chunking
 def chunk_audio(wav_path:str,chunk_minutes:int=10)->str:
@@ -55,9 +63,14 @@ def chunk_audio(wav_path:str,chunk_minutes:int=10)->str:
 # Final Function to call all
 def process_audio(url:str)->list:
     if url.startswith("http://") or url.startswith("https://"): #If youtube video
+        print(f"[+] Downloading YouTube audio from: {url}")
         wav_path=download_youtube_audio(url)
+        print(f"[+] Audio saved to: {wav_path}")
     else:                                                       # If local audio file
+        print(f"[+] Processing local audio file: {url}")
         wav_path=convert_to_wav(url) 
 
+    print("[+] Chunking audio file...")
     chunks=chunk_audio(wav_path)
+    print(f"[+] Created {len(chunks)} chunk(s).")
     return chunks
