@@ -9,9 +9,9 @@ python-dotenv>=1.0.0
 pypdf>=4.0.0                    # PDF text extraction
 yt-dlp>=2024.8.6                # download audio from YouTube URLs
 
-# --- Audio transcription (Whisper) ---
-openai-whisper                  # local Whisper model (latest release with wheel support)
-# faster-whisper>=1.0.0          # recommended faster implementation
+# --- Audio transcription (Deepgram & Whisper) ---
+deepgram-sdk>=3.0.0
+openai-whisper                  # local Whisper model fallback
 ffmpeg-python>=0.2.0            # audio conversion/handling (requires system ffmpeg installed)
 
 # --- Mistral API (summarization + structured output) ---
