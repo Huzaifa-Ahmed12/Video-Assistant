@@ -13,7 +13,7 @@ def split_transcript(transcript:str)->list:
         chunk_size=3500,
         chunk_overlap=200
     )
-    return splitter.split_documents(transcript)
+    return splitter.split_text(transcript)
 
 system="""You are a powerful assistant. Your job is to summarize this portion of meeting transcript concisely"""
 human="{text}"
@@ -36,7 +36,7 @@ def summarize(transcript:str)->str:
          ("human","{text}")
     ])
     combined_chain=(
-        RunnablePassthrough() | RunnableLambda(lambda x:{"text":x}) | combined_prompts | llm | StrOutputParser
+        RunnablePassthrough() | RunnableLambda(lambda x:{"text":x}) | combined_prompts | llm | StrOutputParser()
     )
 
     return combined_chain.invoke(combined_chunks)
@@ -45,12 +45,13 @@ def generate_title(transcript:str)->str:
     llm=get_llm()
 
     title_chain=(
-        RunnablePassthrough() | RunnableLambda(lambda x;{"text":x})| 
+        RunnablePassthrough() | RunnableLambda(lambda x:{"text":x})| 
         ChatPromptTemplate.from_messages([
             ("system","""You are a powerful meeting assistant. Your job is to generate a short professional meeting 
             title of max 8 words. And give only title nothing else"""
-             )
+             ),
             ("human","{text}")
         ])
+        | llm | StrOutputParser()
     )
     return title_chain.invoke(transcript[:3000])
