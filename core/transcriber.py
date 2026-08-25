@@ -263,6 +263,25 @@ def load_whisper_model():
     return _whisper_model
 
 
+def detect_audio_language(audio_path: str) -> str:
+    """
+    Detect spoken language of audio file using Whisper.
+    Returns language code e.g. 'ur' (Urdu), 'en' (English).
+    """
+    import whisper
+    model = load_whisper_model()
+    print(f"[+] Detecting spoken language for audio: {os.path.basename(audio_path)}...")
+    audio = whisper.load_audio(audio_path)
+    audio = whisper.pad_or_trim(audio)
+    n_mels = getattr(model.dims, "n_mels", 80)
+    mel = whisper.log_mel_spectrogram(audio, n_mels=n_mels).to(model.device)
+    _, probs = model.detect_language(mel)
+    detected_lang = max(probs, key=probs.get)
+    confidence = probs[detected_lang]
+    print(f"[+] Detected audio language: '{detected_lang}' (Confidence: {confidence:.2%})")
+    return detected_lang
+
+
 def transcribe_chunk(chunk_path: str, translate: bool = False) -> str:
     model = load_whisper_model()
     task = "Translate" if translate else "transcribe"
