@@ -18,14 +18,27 @@ ffmpeg-python>=0.2.0            # audio conversion/handling (requires system ffm
 mistralai>=1.0.0
 
 # --- RAG (chat with the summary/transcript) ---
-langchain>=0.3.0
-langchain-core>=0.3.0
-langchain-community>=0.3.0
-langchain-mistralai>=0.1.0
+# IMPORTANT: langchain 1.0+ was a major rewrite — EnsembleRetriever, old-style
+# chains (LLMChain, Chain, BaseMemory), etc. moved out of the core package.
+# The whole langchain-* family below is pinned to EXACT versions (not ranges)
+# because they must all come from the same pre-1.0 generation to be mutually
+# compatible. Using ranges lets the resolver silently mix an old `langchain`
+# with a new `langchain-core`, which breaks imports like EnsembleRetriever.
+# These exact versions were confirmed working together on 2026-09-02.
+langchain==0.3.30
+langchain-core==0.3.85
+langchain-community==0.3.30
+langchain-chroma==0.1.4
+langchain-huggingface==0.1.2
+langchain-mistralai==0.2.11
+langchain-text-splitters==0.3.11
 rank_bm25>=0.2.2                 # BM25 keyword retrieval for hybrid search (required by BM25Retriever)
 chromadb>=0.5.0                 # vector store for RAG
 sentence-transformers>=3.0.0    # embeddings (for local RAG embeddings)
 tiktoken>=0.7.0                 # token counting / chunking
+
+# --- Audio utilities ---
+pydub>=0.25.1                    # audio manipulation and chunking
 
 # --- Utilities ---
 requests>=2.31.0

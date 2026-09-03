@@ -186,7 +186,18 @@ def run_pipeline(source: str) -> dict:
     questions = extract_questions(insight_text)
 
     # ------------------------------------------------------------------ #
-    # STEP 7 — Print insights summary to console
+    # STEP 7 — Build Vector Store & RAG Chain
+    # ------------------------------------------------------------------ #
+    print("\n[STEP 7] Building Vector Store & RAG Chain for Q&A...")
+    rag_chain = None
+    try:
+        rag_chain = build_rag_chain(insight_text)
+        print("[+] RAG Chain successfully initialized!")
+    except Exception as e:
+        print(f"[!] Error building RAG chain: {e}")
+
+    # ------------------------------------------------------------------ #
+    # STEP 8 — Print insights summary to console
     # ------------------------------------------------------------------ #
     print("\n" + "=" * 60)
     print(f"  📌  TITLE: {title}")
@@ -217,7 +228,7 @@ def run_pipeline(source: str) -> dict:
     print("=" * 52)
 
     # ------------------------------------------------------------------ #
-    # STEP 8 — Return everything as a structured dictionary
+    # STEP 9 — Return everything as a structured dictionary
     # ------------------------------------------------------------------ #
     return {
         # ── Raw transcripts ───────────────────────────────────────────
@@ -236,6 +247,7 @@ def run_pipeline(source: str) -> dict:
         "action_items"      : action_items,
         "key_decisions"     : key_decisions,
         "questions"         : questions,
+        "rag_chain"         : rag_chain,
     }
 
 
@@ -248,3 +260,20 @@ if __name__ == "__main__":
         print("[!] No input provided. Exiting.")
     else:
         result = run_pipeline(source)
+        rag_chain = result.get("rag_chain")
+
+        if rag_chain:
+            print("\n" + "=" * 60)
+            print("  💬  INTERACTIVE RAG CHAT")
+            print("  Ask any questions about the video! (Type 'exit' to quit)")
+            print("=" * 60)
+            while True:
+                user_query = input("\n[Q]: ").strip()
+                if not user_query or user_query.lower() in ["exit", "quit", "q"]:
+                    print("\n[+] Exiting Interactive Chat. Goodbye!")
+                    break
+                print("\n[Searching transcript & generating answer...]")
+                try:
+                    get_question(rag_chain, user_query)
+                except Exception as err:
+                    print(f"[!] Error processing question: {err}")
