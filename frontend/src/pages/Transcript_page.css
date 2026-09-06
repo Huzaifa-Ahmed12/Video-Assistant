@@ -1,0 +1,48 @@
+.transcript-page {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+.transcript-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.transcript-chat-link {
+  color: #4f46e5;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.transcript-status {
+  text-align: center;
+  margin-top: 60px;
+  color: #6b7280;
+}
+.transcript-error {
+  color: #b91c1c;
+}
+.transcript-segment {
+  padding: 14px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.transcript-meta {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+.transcript-speaker {
+  font-weight: 600;
+  color: #4f46e5;
+}
+.transcript-text {
+  margin: 0;
+  line-height: 1.5;
+}
+.transcript-empty {
+  color: #6b7280;
+  padding: 24px;
+  text-align: center;
+}
