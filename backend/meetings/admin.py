@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import Meeting, TranscriptSegment, ChatMessage
 
-# Register your models here.
+admin.site.register(Meeting)
+admin.site.register(TranscriptSegment)
+admin.site.register(ChatMessage)
