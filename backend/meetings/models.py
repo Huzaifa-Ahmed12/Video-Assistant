@@ -1,4 +1,6 @@
 from django.db import models
+from pgvector.django import VectorField
+
 
 class Meeting(models.Model):
     STATUS_CHOICES = [
@@ -39,3 +41,11 @@ class ChatMessage(models.Model):
 
     class Meta:
         ordering = ['created_at']
+class Chunk(models.Model):
+    meeting = models.ForeignKey('Meeting', on_delete=models.CASCADE, related_name='chunks')
+    text = models.TextField()
+    speaker = models.CharField(max_length=255, blank=True, null=True)
+    start_time = models.FloatField(blank=True, null=True)
+    end_time = models.FloatField(blank=True, null=True)
+    embedding = VectorField(dimensions=384)
+    created_at = models.DateTimeField(auto_now_add=True)
