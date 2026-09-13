@@ -23,7 +23,8 @@ except (ImportError, ModuleNotFoundError):
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
-CHROMA_DIR = "vector_db"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CHROMA_DIR = os.path.join(BASE_DIR, "vector_db")
 COLLECTION_NAME = "meeting_transcript"
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
@@ -33,8 +34,8 @@ def get_embeddings():
         model_kwargs={"device": "cpu"}
     )
 
-def build_vector_store(transcript: str) -> Chroma:
-    print("Creating Vector Store......")
+def build_vector_store(transcript: str, collection_name: str = COLLECTION_NAME) -> Chroma:
+    print(f"Creating Vector Store for collection '{collection_name}'...")
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
         chunk_overlap=50
@@ -48,15 +49,15 @@ def build_vector_store(transcript: str) -> Chroma:
     vector_store = Chroma.from_documents(
         documents=docs,
         embedding=embeddings,
-        collection_name=COLLECTION_NAME,
+        collection_name=collection_name,
         persist_directory=CHROMA_DIR
     )
     return vector_store
 
-def load_vector_store() -> Chroma:
+def load_vector_store(collection_name: str = COLLECTION_NAME) -> Chroma:
     embeddings = get_embeddings()
     vector_store = Chroma(
-        collection_name=COLLECTION_NAME,
+        collection_name=collection_name,
         embedding_function=embeddings,
         persist_directory=CHROMA_DIR
     )

@@ -5,7 +5,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
-from audio_processor import process_audio
+from utils.audio_processor import process_audio
 from core.transcriber import transcribe_all, detect_audio_language, transcribe_with_deepgram
 from core.summarize import summarize, generate_title
 from core.translator import translate_urdu_to_english, translate_speaker_blocks
@@ -65,29 +65,25 @@ def run_pipeline(source: str) -> dict:
     translated_blocks = []
 
     # ------------------------------------------------------------------ #
-    # STEP 3 — Transcription  (two paths: Urdu  vs  English/other)
+    # STEP 3 — Transcription (Primary: Cloud API Deepgram / OpenAI, Fallback: Local Whisper)
     # ------------------------------------------------------------------ #
-    if is_urdu:
-        # ── Urdu Path ──────────────────────────────────────────────────
-        print("\n[STEP 3] Urdu audio detected.")
+    deepgram_key = os.getenv("DEEPGRAM_API_KEY")
 
-        deepgram_key = os.getenv("DEEPGRAM_API_KEY")
+    if deepgram_key:
+        print(f"\n[STEP 3] Transcribing with Deepgram API (Language: '{detected_lang}')...")
+        dg_result = transcribe_with_deepgram(
+            audio_path=audio_path,
+            language=detected_lang if detected_lang in ["ur", "en", "es", "fr", "de", "hi"] else "en",
+            model="nova-3",
+            diarize=True,
+            smart_format=True,
+        )
 
-        if deepgram_key:
-            # ── 3a. Deepgram (primary — full diarization in Urdu) ───────
-            print("[+] Using Deepgram for Urdu transcription & speaker diarization...")
-            dg_result = transcribe_with_deepgram(
-                audio_path=audio_path,
-                language="ur",
-                model="nova-3",
-                diarize=True,
-                smart_format=True,
-            )
+        if is_urdu:
             urdu_transcript = dg_result.get("text", "")
             diarized_blocks = dg_result.get("diarized_blocks", [])
 
-            # ── 3b. Translate speaker blocks + full transcript to English ─
-            print("\n[+] Translating speaker blocks to English...")
+            print("\n[+] Translating Urdu speaker blocks to English...")
             translated_blocks = translate_speaker_blocks(diarized_blocks)
 
             print("[+] Translating full Urdu transcript to English...")
@@ -95,28 +91,29 @@ def run_pipeline(source: str) -> dict:
                 translate_urdu_to_english(urdu_transcript) if urdu_transcript else ""
             )
 
-            # Build a clean English text from translated blocks as fallback
             if not english_transcript and translated_blocks:
                 english_transcript = "\n\n".join(
                     f"{b['speaker']}: {b.get('english_text', b.get('text', ''))}"
                     for b in translated_blocks
                 )
-
         else:
-            # ── 3c. No Deepgram key — fallback to local Whisper ─────────
-            print("[!] DEEPGRAM_API_KEY not found. Falling back to local Whisper...")
-            chunks = process_audio(source, return_chunks=True)
+            english_transcript = dg_result.get("text", "")
+            diarized_blocks = dg_result.get("diarized_blocks", [])
+            translated_blocks = [
+                {"speaker": b["speaker"], "text": b["text"], "english_text": b["text"]}
+                for b in diarized_blocks
+            ]
+    else:
+        # Fallback to local Whisper if no Deepgram key is set
+        print(f"\n[STEP 3] No DEEPGRAM_API_KEY set. Falling back to local Whisper (Language: '{detected_lang}')...")
+        chunks = process_audio(source, return_chunks=True)
+        if is_urdu:
             urdu_transcript = transcribe_all(chunks)
-
             print("[+] Translating Whisper Urdu transcript to English...")
             english_transcript = translate_urdu_to_english(urdu_transcript)
+        else:
+            english_transcript = transcribe_all(chunks)
 
-    else:
-        # ── English / other language path ──────────────────────────────
-        print(f"\n[STEP 3] Audio detected as '{detected_lang}' (non-Urdu).")
-        print("[+] Transcribing with local Whisper (English mode)...")
-        chunks = process_audio(source, return_chunks=True)
-        english_transcript = transcribe_all(chunks)
 
     # ------------------------------------------------------------------ #
     # STEP 4 — Print transcript to console

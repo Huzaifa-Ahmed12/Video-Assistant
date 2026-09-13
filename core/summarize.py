@@ -18,40 +18,53 @@ def split_transcript(transcript:str)->list:
 system="""You are a powerful assistant. Your job is to summarize this portion of meeting transcript concisely"""
 human="{text}"
 
-def summarize(transcript:str)->str:
-    llm=get_llm()
-    map_prompts=ChatPromptTemplate.from_messages([
-        ("system",system),
-        ("human",human)
-    ])
-    map_chain=map_prompts | llm | StrOutputParser()
-    chunks=split_transcript(transcript)
-    chunk_summarize=[map_chain.invoke({"text":chunk}) for chunk in chunks]
-    combined_chunks="\n\n".join(chunk_summarize)
-
-    combined_prompts=ChatPromptTemplate.from_messages([  # To handle the chat overlap issue
-        ("system","""You are an expert meeting assistant and you job is to combine these partial transcript
-        and give a final professional summary in bullet points"""
-         ),
-         ("human","{text}")
-    ])
-    combined_chain=(
-        RunnablePassthrough() | RunnableLambda(lambda x:{"text":x}) | combined_prompts | llm | StrOutputParser()
-    )
-
-    return combined_chain.invoke(combined_chunks)
-
-def generate_title(transcript:str)->str:
-    llm=get_llm()
-
-    title_chain=(
-        RunnablePassthrough() | RunnableLambda(lambda x:{"text":x})| 
-        ChatPromptTemplate.from_messages([
-            ("system","""You are a powerful meeting assistant. Your job is to generate a short professional meeting 
-            title of max 8 words. And give only title nothing else"""
-             ),
-            ("human","{text}")
+def summarize(transcript: str) -> str:
+    try:
+        llm = get_llm()
+        map_prompts = ChatPromptTemplate.from_messages([
+            ("system", system),
+            ("human", human)
         ])
-        | llm | StrOutputParser()
-    )
-    return title_chain.invoke(transcript[:3000])
+        map_chain = map_prompts | llm | StrOutputParser()
+        chunks = split_transcript(transcript)
+        chunk_summarize = [map_chain.invoke({"text": chunk}) for chunk in chunks]
+        combined_chunks = "\n\n".join(chunk_summarize)
+
+        combined_prompts = ChatPromptTemplate.from_messages([
+            ("system", """You are an expert meeting assistant and you job is to combine these partial transcript
+            and give a final professional summary in bullet points"""
+             ),
+             ("human", "{text}")
+        ])
+        combined_chain = (
+            RunnablePassthrough() | RunnableLambda(lambda x: {"text": x}) | combined_prompts | llm | StrOutputParser()
+        )
+
+        return combined_chain.invoke(combined_chunks)
+    except Exception as e:
+        print(f"[!] Warning: Summarization failed ({e}). Returning fallback summary.")
+        return "Summary unavailable (Mistral API Rate Limit Exceeded)."
+
+def generate_title(transcript: str) -> str:
+    try:
+        llm = get_llm()
+
+        title_chain = (
+            RunnablePassthrough() | RunnableLambda(lambda x: {"text": x}) | 
+            ChatPromptTemplate.from_messages([
+                ("system", """You are a powerful meeting assistant. Your job is to generate a short professional meeting 
+                title of max 8 words. And give only title nothing else"""
+                 ),
+                ("human", "{text}")
+            ])
+            | llm | StrOutputParser()
+        )
+        return title_chain.invoke(transcript[:3000]).strip()
+    except Exception as e:
+        print(f"[!] Warning: Title generation failed ({e}). Using fallback title.")
+        if transcript:
+            first_line = transcript.strip().split("\n")[0]
+            words = first_line.split()[:6]
+            return " ".join(words) if words else "Meeting Transcript"
+        return "Meeting Transcript"
+

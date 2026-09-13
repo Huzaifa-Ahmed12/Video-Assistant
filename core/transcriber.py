@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 # Load environment variables (e.g. DEEPGRAM_API_KEY)
 load_dotenv()
 
-WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
 _whisper_model = None
 
 # --- Deepgram Transcription Engine ---

@@ -18,29 +18,41 @@ def build_chain(system_prompt:str):
         ]) | llm | StrOutputParser()
     )
 
-def extract_action_items(transcript:str)->str:
-    chain=build_chain(
-        """You are an expert meeting analyst. From the meeting transcriptons
-        extract all the action items. For each provide:
-        -Task Descriptions
-        -Owner (Who's reponsible)
-        -Deadline (if mentioned and if not mentioned dont write yourself)
-        - Format these as number list and if no found give 'No Actions Found' """
-    )
-    return chain.invoke(transcript)
+def extract_action_items(transcript: str) -> str:
+    try:
+        chain = build_chain(
+            """You are an expert meeting analyst. From the meeting transcriptons
+            extract all the action items. For each provide:
+            -Task Descriptions
+            -Owner (Who's reponsible)
+            -Deadline (if mentioned and if not mentioned dont write yourself)
+            - Format these as number list and if no found give 'No Actions Found' """
+        )
+        return chain.invoke(transcript)
+    except Exception as e:
+        print(f"[!] Warning: Action item extraction failed ({e}).")
+        return "No Actions Found (Mistral API Rate Limit Exceeded)"
 
-def extract_key_decisions(transcript:str)->str:
-    chain=build_chain(
-        """You are an expert meeting analyst. From the meeting Transcriptions 
-        extract all the key decisions made. Write them all in a numbered list
-        and if none found simply give 'No key Decisions Made'"""
-    )
-    return chain.invoke(transcript)
+def extract_key_decisions(transcript: str) -> str:
+    try:
+        chain = build_chain(
+            """You are an expert meeting analyst. From the meeting Transcriptions 
+            extract all the key decisions made. Write them all in a numbered list
+            and if none found simply give 'No key Decisions Made'"""
+        )
+        return chain.invoke(transcript)
+    except Exception as e:
+        print(f"[!] Warning: Key decision extraction failed ({e}).")
+        return "No Key Decisions Made (Mistral API Rate Limit Exceeded)"
 
-def extract_questions(transcript:str)->str:
-    chain=build_chain(
-        """You are a powerful meeting analyst. From the meeting transcript extract
-        all unresolved questions and topics needing follow-up. Format them as a list
-        and if no questions are there simply give 'No Questions found' """
-    )
-    return chain.invoke(transcript)
+def extract_questions(transcript: str) -> str:
+    try:
+        chain = build_chain(
+            """You are a powerful meeting analyst. From the meeting transcript extract
+            all unresolved questions and topics needing follow-up. Format them as a list
+            and if no questions are there simply give 'No Questions found' """
+        )
+        return chain.invoke(transcript)
+    except Exception as e:
+        print(f"[!] Warning: Question extraction failed ({e}).")
+        return "No Questions Found (Mistral API Rate Limit Exceeded)"
